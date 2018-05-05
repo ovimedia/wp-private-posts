@@ -41,12 +41,7 @@ if ( ! class_exists( 'private_posts' ) )
         {
             global $post;
 
-            $user = wp_get_current_user();  
-
-            $allow_roles = get_post_meta( $post->ID, 'wpp_post_allow_roles');
-            $allow_users = get_post_meta( $post->ID, 'wpp_post_allow_users');
-
-            if(!$this->wpp_check_permissions($user, $allow_roles, $allow_users))
+            if(!$this->wpp_check_permissions($post))
                 echo '<meta name="robots" content="noindex,nofollow">';
         }
 
@@ -207,7 +202,6 @@ if ( ! class_exists( 'private_posts' ) )
 
             if($validate_wpp_post_allow_users )
                 update_post_meta( $post_id, 'wpp_post_allow_users', $post_allow_uses);
-
         }
 
         public function wpp_load_body($content) 
@@ -218,19 +212,19 @@ if ( ! class_exists( 'private_posts' ) )
 
             if($message == "") $message = '<a href="'.get_admin_url().'options-general.php?page=wp_private_posts">'.translate( 'Define the private posts message in the settings menu.', 'wp-private-posts' ).'</a>';
 
-            $user = wp_get_current_user();  
-
-            $allow_roles = get_post_meta( $post->ID, 'wpp_post_allow_roles');
-            $allow_users = get_post_meta( $post->ID, 'wpp_post_allow_users');
-
-            if($this->wpp_check_permissions($user, $allow_roles, $allow_users))
+            if($this->wpp_check_permissions($post))
                 return $content;
             else
                 return $message;  
         } 
 
-        public function wpp_check_permissions($user, $allow_roles, $allow_users)
+        public function wpp_check_permissions($post)
         {
+            $user = wp_get_current_user();  
+
+            $allow_roles = get_post_meta( $post->ID, 'wpp_post_allow_roles');
+            $allow_users = get_post_meta( $post->ID, 'wpp_post_allow_users');
+
             if(!in_array(ucfirst($user->roles[0]), $allow_roles[0]) && !in_array($user->display_name, $allow_users[0]) 
             && !in_array("all", $allow_roles[0]) && !in_array("all", $allow_users[0])
             && isset($allow_roles[0]) && isset($allow_users[0]))
