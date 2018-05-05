@@ -1,0 +1,28 @@
+.meta_div_post_permisions,
+.meta_div_post_permisions select,
+.meta_div_post_permisions p,
+.meta_div_post_permisions input[type="number"],
+.meta_div_post_permisions input[type="text"] {
+    width: 100%;
+}
+
+.meta_div_post_permisions p {
+    margin-bottom: 8px;
+    margin-top: 8px;
+}
+
+.meta_div_post_permisions p label {
+    font-weight: bold;
+}
+
+.meta_div_post_permisions p select {
+    margin: 3px 0px 15px 0px;
+}
+
+#postexcerpt p {
+    display: none !important;
+}
+
+.select2-selection--multiple .select2-search {
+    width: 0px !important;
+}
