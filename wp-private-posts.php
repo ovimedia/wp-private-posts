@@ -5,7 +5,7 @@ Description: Plugin that allows to define permisions for all post types based of
 Author: Ovi García - ovimedia.es
 Author URI: http://www.ovimedia.es/
 Text Domain: wp-private-posts
-Version: 0.1
+Version: 0.2
 */
 
 if ( ! defined( 'ABSPATH' ) ) exit; 
@@ -37,28 +37,16 @@ if ( ! class_exists( 'private_posts' ) )
                 'wp_private_posts', array( $this,'wpp_options_form'));
         }  
 
-        public function wpp_load_head()
-        {
-            global $post;
-
-            if(!$this->wpp_check_permissions($post))
-                echo '<meta name="robots" content="noindex,nofollow">';
-        }
-
         public function wpp_admin_js_css() 
         {
             wp_register_style( 'custom_private_post_admin_css', WP_PLUGIN_URL. '/'.basename( dirname( __FILE__ ) ).'/css/style.css', false, '1.0.0' );
-
             wp_enqueue_style( 'custom_private_post_admin_css' );
 
             wp_register_style( 'private_post_select2_css', WP_PLUGIN_URL. '/'.basename( dirname( __FILE__ ) ).'/css/select2.min.css', false, '1.0.0' );
-
             wp_enqueue_style( 'private_post_select2_css' );
 
             wp_enqueue_script( 'private_post_script', WP_PLUGIN_URL. '/'.basename( dirname( __FILE__ ) ).'/js/scripts.js', array('jquery') );
-
             wp_enqueue_script( 'private_post_select2', WP_PLUGIN_URL. '/'.basename( dirname( __FILE__ ) ).'/js/select2.min.js', array('jquery') );
-        
         }
 
         public function wpp_init_metabox()
@@ -99,17 +87,14 @@ if ( ! class_exists( 'private_posts' ) )
             </div>
 
             <?php
-
         }
         
-
         public function wpp_meta_options( $post )
         {
             global $wpdb;
             
-            $allow_roles = get_post_meta( get_the_ID(), 'wpp_post_allow_roles');
-
-            $allow_users = get_post_meta( get_the_ID(), 'wpp_post_allow_users');
+            $allow_roles = get_post_meta( get_the_ID(), 'wpp_post_allow_roles', true);
+            $allow_users = get_post_meta( get_the_ID(), 'wpp_post_allow_users', true);
 
             ?>
             <div class="meta_div_post_permisions">         
@@ -120,7 +105,7 @@ if ( ! class_exists( 'private_posts' ) )
                 </p>
                 <p>
                     <select multiple="multiple"  id="wpp_post_allow_roles" name="wpp_post_allow_roles[]">
-                        <option value="all" <?php if(in_array("all", $allow_roles[0]) || !isset($allow_roles[0])) echo ' selected="selected" '; ?> >
+                        <option value="all" <?php if(in_array("all", $allow_roles) || !isset($allow_roles)) echo ' selected="selected" '; ?> >
                             <?php echo translate( 'All', 'wp-private-posts' ) ?>
                         </option>
                         <?php
@@ -131,10 +116,10 @@ if ( ! class_exists( 'private_posts' ) )
                             {
                                 echo '<option ';
 
-                                if( in_array($rol["name"], $allow_roles[0]) )
+                                if( in_array($rol["name"], $allow_roles) )
                                     echo ' selected="selected" ';
 
-                                echo ' value="'.$rol["name"].'">'.ucfirst ($rol["name"]).'</option>';
+                                echo ' value="'.$rol["name"].'">'.$rol["name"].'</option>';
                             } 
 
                         ?>
@@ -148,7 +133,7 @@ if ( ! class_exists( 'private_posts' ) )
                 </p>
                 <p>
                     <select multiple="multiple"  id="wpp_post_allow_users" name="wpp_post_allow_users[]">
-                        <option value="all" <?php if(in_array("all", $allow_users[0]) || !isset($allow_users[0])) echo ' selected="selected" '; ?> >
+                        <option value="all" <?php if(in_array("all", $allow_users) || !isset($allow_users)) echo ' selected="selected" '; ?> >
                             <?php echo translate( 'All', 'wp-private-posts' ) ?>
                         </option>
                         <?php
@@ -159,7 +144,7 @@ if ( ! class_exists( 'private_posts' ) )
                             {
                                 echo '<option ';
 
-                                if( in_array($user->display_name, $allow_users[0]) )
+                                if( in_array($user->display_name, $allow_users) )
                                     echo ' selected="selected" ';
 
                                 echo ' value="'.$user->display_name .'">'.ucfirst ($user->display_name ).'</option>';
@@ -169,13 +154,15 @@ if ( ! class_exists( 'private_posts' ) )
                     </select>
                 </p>
 
+                <input type="hidden" value="ok" name="wpp_validate_data" id="wpp_validate_data" />
+
             </div>
         <?php 
         }
 
         public function wpp_save_data_post_permissions( $post_id )
         {
-            if (current_user_can("administrator") != 1 ) return;
+            if (current_user_can("administrator") != 1  || !isset($_REQUEST['wpp_validate_data'])) return;
 
             $post_allow_roles = $post_allow_uses  = array();
 
@@ -212,25 +199,40 @@ if ( ! class_exists( 'private_posts' ) )
 
             if($message == "") $message = '<a href="'.get_admin_url().'options-general.php?page=wp_private_posts">'.translate( 'Define the private posts message in the settings menu.', 'wp-private-posts' ).'</a>';
 
-            if($this->wpp_check_permissions($post))
-                return $content;
-            else
-                return $message;  
-        } 
-
-        public function wpp_check_permissions($post)
-        {
             $user = wp_get_current_user();  
 
-            $allow_roles = get_post_meta( $post->ID, 'wpp_post_allow_roles');
-            $allow_users = get_post_meta( $post->ID, 'wpp_post_allow_users');
+            $allow_roles = get_post_meta( $post->ID, 'wpp_post_allow_roles', true);
+            $allow_users = get_post_meta( $post->ID, 'wpp_post_allow_users', true);
 
-            if(!in_array(ucfirst($user->roles[0]), $allow_roles[0]) && !in_array($user->display_name, $allow_users[0]) 
-            && !in_array("all", $allow_roles[0]) && !in_array("all", $allow_users[0])
-            && isset($allow_roles[0]) && isset($allow_users[0]))
-                return false;
+            if(is_array($user->roles))
+                $rol = $user->roles[0];
             else
-                return true;
+                $rol = $user->roles;
+
+            if(in_array("all", $allow_roles) || in_array("all", $allow_users))
+                return $content;
+
+            if( in_array(ucfirst($rol), $allow_roles) || in_array($user->display_name, $allow_users))
+                return $content;   
+            
+            if( count($allow_roles) == 0  && count($allow_users) == 0)
+                return $content; 
+
+            return $message; 
+        } 
+
+        public function wpp_load_head()
+        {
+            global $post;
+
+            $user = wp_get_current_user();  
+
+            $allow_roles = get_post_meta( $post->ID, 'wpp_post_allow_roles', true);
+            $allow_users = get_post_meta( $post->ID, 'wpp_post_allow_users', true);
+
+            if(!in_array("all", $allow_roles) && !in_array("all", $allow_users)
+            && (count($allow_roles) > 0  || count($allow_users) > 0))
+                echo '<meta name="robots" content="noindex,nofollow">';
         }
     }
 }
