@@ -218,6 +218,9 @@ if ( ! class_exists( 'private_posts' ) )
             if( $allow_roles == "" && $allow_users == "")
                 return $content; 
 
+            if( count($allow_roles) == 0 && count($allow_users) == 0)
+                return $content; 
+
             return $message; 
         } 
 
