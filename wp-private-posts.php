@@ -214,8 +214,8 @@ if ( ! class_exists( 'private_posts' ) )
 
             if( in_array(ucfirst($rol), $allow_roles) || in_array($user->display_name, $allow_users))
                 return $content;   
-            
-            if( count($allow_roles) == 0  && count($allow_users) == 0)
+
+            if( $allow_roles == "" && $allow_users == "")
                 return $content; 
 
             return $message; 
