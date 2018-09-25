@@ -5,7 +5,7 @@ Description: Plugin that allows to define permisions for all post types based of
 Author: Ovi García - ovimedia.es
 Author URI: http://www.ovimedia.es/
 Text Domain: wp-private-posts
-Version: 0.2
+Version: 0.3
 */
 
 if ( ! defined( 'ABSPATH' ) ) exit; 
@@ -205,14 +205,25 @@ if ( ! class_exists( 'private_posts' ) )
             $allow_users = get_post_meta( $post->ID, 'wpp_post_allow_users', true);
 
             if(is_array($user->roles))
-                $rol = $user->roles[0];
+            {
+                foreach($user->roles as $rol)
+                {
+                    if(in_array(ucfirst($rol), $allow_roles) )
+                        return $content;  
+                }     
+            }
             else
+            {
                 $rol = $user->roles;
 
+                if(in_array(ucfirst($rol), $allow_roles) )
+                    return $content;  
+            }
+            
             if(in_array("all", $allow_roles) || in_array("all", $allow_users))
                 return $content;
 
-            if( in_array(ucfirst($rol), $allow_roles) || in_array($user->display_name, $allow_users))
+            if(in_array($user->display_name, $allow_users))
                 return $content;   
 
             if( $allow_roles == "" && $allow_users == "")
